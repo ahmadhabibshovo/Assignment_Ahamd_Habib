@@ -1,0 +1,215 @@
+Index: lib/pages/music_library/music_library.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/lib/pages/music_library/music_library.dart b/lib/pages/music_library/music_library.dart
+--- a/lib/pages/music_library/music_library.dart	
++++ b/lib/pages/music_library/music_library.dart	(date 1706932234958)
+@@ -2,7 +2,6 @@
+ 
+ import 'package:assets_audio_player/assets_audio_player.dart';
+ import 'package:assignment_app/pages/music_library/audios/audios.dart';
+-import 'package:assignment_app/pages/music_library/widgets/music_controllers/playingController.dart';
+ import 'package:assignment_app/pages/music_library/widgets/music_player.dart';
+ import 'package:assignment_app/pages/music_library/widgets/song_selector.dart';
+ import 'package:assignment_app/player/PlayingControls.dart';
+@@ -25,17 +24,19 @@
+   void initState() {
+     super.initState();
+     _assetsAudioPlayer = AssetsAudioPlayer.newPlayer();
+-    _subscriptions.add(_assetsAudioPlayer.playlistAudioFinished.listen((data) {
++    _subscriptions.add(
++        buildAssetsAudioPlayerController().playlistAudioFinished.listen((data) {
+       print('playlistAudioFinished : $data');
+     }));
+-    _subscriptions.add(_assetsAudioPlayer.audioSessionId.listen((sessionId) {
++    _subscriptions.add(
++        buildAssetsAudioPlayerController().audioSessionId.listen((sessionId) {
+       print('audioSessionId : $sessionId');
+     }));
+     openPlayer();
+   }
+ 
+   void openPlayer() async {
+-    await _assetsAudioPlayer.open(
++    await buildAssetsAudioPlayerController().open(
+       Playlist(audios: audios, startIndex: 0),
+       showNotification: true,
+       autoStart: true,
+@@ -44,7 +45,7 @@
+ 
+   @override
+   void dispose() {
+-    _assetsAudioPlayer.dispose();
++    buildAssetsAudioPlayerController().dispose();
+     print('dispose');
+     super.dispose();
+   }
+@@ -61,73 +62,97 @@
+               crossAxisAlignment: CrossAxisAlignment.stretch,
+               children: <Widget>[
+                 SizedBox(height: 20),
+-                MusicPlayer(_assetsAudioPlayer),
++                MusicPlayer(buildAssetsAudioPlayerController()),
+                 SizedBox(height: 40),
+                 SizedBox(height: 20),
+-                _assetsAudioPlayer.builderCurrent(
++                buildAssetsAudioPlayerController().builderCurrent(
+                     builder: (bContext, Playing? playing) {
+-                      return Column(
+-                        children: <Widget>[
+-                          _assetsAudioPlayer.builderLoopMode(
+-                            builder: (context, loopMode) {
+-                              return PlayerBuilder.isPlaying(
+-                                  player: _assetsAudioPlayer,
+-                                  builder: (context, isPlaying) {
+-                                    return playingContrller(
+-                                        loopMode, isPlaying,_assetsAudioPlayer);
+-                                  });
+-                            },
+-                          ),
+-                          _assetsAudioPlayer.builderRealtimePlayingInfos(
+-                              builder:
+-                                  (BuildContext bContext,
++                  return Column(
++                    children: <Widget>[
++                      buildAssetsAudioPlayerController().builderLoopMode(
++                        builder: (context, loopMode) {
++                          return PlayerBuilder.isPlaying(
++                              player: buildAssetsAudioPlayerController(),
++                              builder: (context, isPlaying) {
++                                return PlayingControls(
++                                  loopMode: loopMode,
++                                  isPlaying: isPlaying,
++                                  isPlaylist: true,
++                                  onStop: () {
++                                    buildAssetsAudioPlayerController().stop();
++                                  },
++                                  toggleLoop: () {
++                                    buildAssetsAudioPlayerController()
++                                        .toggleLoop();
++                                  },
++                                  onPlay: () {
++                                    buildAssetsAudioPlayerController()
++                                        .playOrPause();
++                                  },
++                                  onNext: () {
++                                    //_assetsAudioPlayer.forward(Duration(seconds: 10));
++                                    buildAssetsAudioPlayerController().next(
++                                        keepLoopMode:
++                                            true /*keepLoopMode: false*/);
++                                  },
++                                  onPrevious: () {
++                                    buildAssetsAudioPlayerController().previous(
++                                        /*keepLoopMode: false*/);
++                                  },
++                                );
++                              });
++                        },
++                      ),
++                      buildAssetsAudioPlayerController()
++                          .builderRealtimePlayingInfos(builder:
++                              (BuildContext bContext,
+                                   RealtimePlayingInfos? infos) {
+-                                if (infos == null) {
+-                                  return SizedBox();
+-                                }
+-                                //print('infos: $infos');
+-                                return Column(
+-                                  children: [
+-                                    PositionSeekWidget(
+-                                      currentPosition: infos.currentPosition,
+-                                      duration: infos.duration,
+-                                      seekTo: (to) {
+-                                        _assetsAudioPlayer.seek(to);
+-                                      },
+-                                    ),
+-                                    Row(
+-                                      mainAxisAlignment: MainAxisAlignment
+-                                          .center,
+-                                      children: [
+-                                        FilledButton(
+-                                          onPressed: () {
+-                                            _assetsAudioPlayer
+-                                                .seekBy(Duration(seconds: -10));
+-                                          },
+-                                          child: Text('-10'),
+-                                        ),
+-                                        SizedBox(
+-                                          width: 12,
+-                                        ),
+-                                        FilledButton(
+-                                          onPressed: () {
+-                                            _assetsAudioPlayer
+-                                                .seekBy(Duration(seconds: 10));
+-                                          },
+-                                          child: Text('+10'),
+-                                        ),
+-                                      ],
+-                                    )
+-                                  ],
+-                                );
+-                              }),
+-                        ],
+-                      );
+-                    }),
+-                _assetsAudioPlayer.builderCurrent(
++                        if (infos == null) {
++                          return SizedBox();
++                        }
++                        //print('infos: $infos');
++                        return Column(
++                          children: [
++                            PositionSeekWidget(
++                              currentPosition: infos.currentPosition,
++                              duration: infos.duration,
++                              seekTo: (to) {
++                                buildAssetsAudioPlayerController().seek(to);
++                              },
++                            ),
++                            Row(
++                              mainAxisAlignment: MainAxisAlignment.center,
++                              children: [
++                                FilledButton(
++                                  onPressed: () {
++                                    buildAssetsAudioPlayerController()
++                                        .seekBy(Duration(seconds: -10));
++                                  },
++                                  child: Text('-10'),
++                                ),
++                                SizedBox(
++                                  width: 12,
++                                ),
++                                FilledButton(
++                                  onPressed: () {
++                                    buildAssetsAudioPlayerController()
++                                        .seekBy(Duration(seconds: 10));
++                                  },
++                                  child: Text('+10'),
++                                ),
++                              ],
++                            )
++                          ],
++                        );
++                      }),
++                    ],
++                  );
++                }),
++                buildAssetsAudioPlayerController().builderCurrent(
+                     builder: (BuildContext bContext, Playing? playing) {
+-                      return songsSelector(_assetsAudioPlayer, playing);
+-                    })
++                  return songsSelector(
++                      buildAssetsAudioPlayerController(), playing);
++                })
+               ],
+             ),
+           ),
+@@ -135,4 +160,6 @@
+       ),
+     );
+   }
++
++  AssetsAudioPlayer buildAssetsAudioPlayerController() => _assetsAudioPlayer;
+ }
